@@ -1,0 +1,64 @@
+FDA_sample=function(seed=123,n=20,sigma1=2,sigma2=4,t=seq(0,1,length=100),sigma3=1){
+  ####生成函數
+  FDA_sample_function=function(seed,n,sigma1,sigma2,t,sigma3){
+    set.seed(seed)
+    a1=rnorm(n,0,sigma1)
+    a2=rnorm(n,0,sigma2)
+    X=matrix(0,nrow = n,ncol = length(t))
+    for(i in 1:n){
+      X[i,]=sqrt(2)*cos(2*pi*t)+a1[i]*sqrt(2)*sin(2*pi*t)+a2[i]*sqrt(2)*sin(3*pi*t)
+    }
+    e=matrix(rnorm(n*length(t),0,sigma3),nrow = n,ncol = length(t))
+    Y=X+e
+    return(Y)
+  }
+  ####mean
+  mean_function=function(Y){
+    m=ncol(Y)
+    mean_hat=matrix(0,m,1)
+    for(j in 1:m){
+      mean_hat[j,1]=mean(Y[,j])
+    }
+    return(mean_hat)
+  }
+  ####cov
+  cov_function=function(Y,mean_hat){
+    n=nrow(Y)
+    m=ncol(Y)
+    cov_hat=matrix(0,m,m)
+    for(j in 1:m){
+      for(k in 1:m){
+        cov_hat[j,k]=sum((Y[,j]-mean_hat[j,1])*(Y[,k]-mean_hat[k,1]))/(n-1)
+      }
+    }
+    return(cov_hat)
+  }
+  ####corr
+  corr_function=function(cov_hat){
+    m=nrow(cov_hat)
+    corr_hat=matrix(0,m,m)
+    var_hat=diag(cov_hat)
+    for(j in 1:m){
+      for(k in 1:m){
+        corr_hat[j,k]=cov_hat[j,k]/sqrt(var_hat[j]*var_hat[k])
+      }
+    }
+    return(corr_hat) 
+  }
+###主程式
+  Y=FDA_sample_function(seed,n,sigma1,sigma2,t,sigma3)
+  mean_hat=mean_function(Y)
+  cov_hat=cov_function(Y,mean_hat)
+  corr_hat=corr_function(cov_hat)
+  return(list(Y=Y,mean_hat=mean_hat,cov_hat=cov_hat,corr_hat=corr_hat,t=t))
+}
+result=FDA_sample()
+matplot(t, t(Y), type='l', lty=1,col=rainbow(nrow(Y)),xlab='t', ylab='Y(t)', main='Original Data Curves')
+library(lattice)
+cov_mat=result$cov_hat
+corr_mat=result$corr_hat
+t=result$t
+contour(t, t, cov_mat,xlab = "t", ylab = "t", main = "Covariance Contour Plot",nlevels = 20)
+contour(t, t, corr_mat,xlab = "t", ylab = "t", main = "Correlation Contour Plot",nlevels = 20)
+persp(t, t, cov_hat, theta =30, phi = 30, expand=0.5,xlab = "t", ylab = "t", zlab = "Covariance",main = "Covariance Surface Plot")
+persp(t, t, corr_mat,theta =30, phi = 30,expand = 0.5, xlab = "t", ylab = "t", zlab = "Correlation", main = "Correlation Surface Plot")
