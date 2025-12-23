@@ -1,6 +1,4 @@
 t=seq(0,1,length=100)
-a1=rnorm(n,0,2)
-a2=rnorm(n,0,4)
 X1=sqrt(2)*sin(2*pi*t)
 X2=sqrt(2)*sin(3*pi*t)
 plot(t,X1,type="l",col="blue")
