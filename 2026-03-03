@@ -17,7 +17,6 @@ t=result$t
 matplot(t, t(Y), type='l', lty=1,col=rainbow(nrow(Y)),
         xlab='t', ylab='Y(t)', main='原始資料曲線')
 
-dim(t)
 Smooth_function=function(t,Y,n=20,h=0.3){
   Y_smooth=matrix(0,nrow=n,ncol=length(t))
   for(i in 1:length(t)){
