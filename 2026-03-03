@@ -1,0 +1,58 @@
+par(mfrow=c(3,1))
+FDA_sample=function(seed=123,n=20,sigma1=2,sigma2=4,t=seq(0,1,length=100),sigma3=1){
+  set.seed(seed)
+  a1=rnorm(n,0,sigma1)
+  a2=rnorm(n,0,sigma2)
+  X=matrix(0,nrow = n,ncol = length(t))
+  for(i in 1:n){
+    X[i,]=sqrt(2)*cos(2*pi*t)+a1[i]*sqrt(2)*sin(2*pi*t)+a2[i]*sqrt(2)*sin(3*pi*t)
+  }
+  e=matrix(rnorm(n*length(t),0,sigma3),nrow = n,ncol = length(t))
+  Y=X+e
+  return(list(Y=Y,t=t))
+}
+result=FDA_sample()
+Y=result$Y
+t=result$t
+matplot(t, t(Y), type='l', lty=1,col=rainbow(nrow(Y)),
+        xlab='t', ylab='Y(t)', main='原始資料曲線')
+
+dim(t)
+Smooth_function=function(t,Y,n=20,h=0.3){
+  Y_smooth=matrix(0,nrow=n,ncol=length(t))
+  for(i in 1:length(t)){
+    t0=t[i]
+    z=(t-t0)/h
+    k=ifelse((3/4)*(1-z^2)>=0,(3/4)*(1-z^2),0)
+    W=diag(k)
+    T1=cbind(1,(t-t0))
+    beta_hat=solve(t(T1)%*%W%*%T1)%*%t(T1)%*%W%*%t(Y)
+    Y_smooth[,i]=beta_hat[1,]
+  }
+  return(list(t=t,Y_smooth=Y_smooth))
+}
+result2=Smooth_function(t,Y,n=20,h=0.3)
+Y_smooth=result2$Y_smooth
+t=result2$t
+matplot(t, t(Y_smooth), type='l', lty=1,col=rainbow(nrow(Y_smooth)),
+        xlab='t', ylab='Y_smooth(t)', main='一階平滑資料曲線')
+
+Smooth_function=function(t,Y,n=20,h=0.3){
+  Y_smooth=matrix(0,nrow=n,ncol=length(t))
+  for(i in 1:length(t)){
+    t0=t[i]
+    z=(t-t0)/h
+    k=ifelse((3/4)*(1-z^2)>=0,(3/4)*(1-z^2),0)
+    W=diag(k)
+    T1=cbind(1,(t-t0),(t-t0)^2,(t-t0)^3)
+    beta_hat=solve(t(T1)%*%W%*%T1)%*%t(T1)%*%W%*%t(Y)
+    Y_smooth[,i]=beta_hat[1,]
+  }
+  return(list(t=t,Y_smooth=Y_smooth))
+}
+result2=Smooth_function(t,Y,n=20,h=0.3)
+Y_smooth=result2$Y_smooth
+t=result2$t
+matplot(t, t(Y_smooth), type='l', lty=1,col=rainbow(nrow(Y_smooth)),
+        xlab='t', ylab='Y_smooth(t)', main='三階平滑資料曲線')
+
