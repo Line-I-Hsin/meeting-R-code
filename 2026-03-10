@@ -1,0 +1,109 @@
+#生成資料(原始資料)
+par(mfrow=c(2,2))
+FDA_sample=function(seed=123,n=20,sigma1=2,sigma2=4,t=seq(0,1,length=100),sigma3=1){
+  set.seed(seed)
+  a1=rnorm(n,0,sigma1)
+  a2=rnorm(n,0,sigma2)
+  X=matrix(0,nrow = n,ncol = length(t))
+  for(i in 1:n){
+    X[i,]=sqrt(2)*cos(2*pi*t)+a1[i]*sqrt(2)*sin(2*pi*t)+a2[i]*sqrt(2)*sin(3*pi*t)
+  }
+  e=matrix(rnorm(n*length(t),0,sigma3),nrow = n,ncol = length(t))
+  Y=X+e
+  return(list(Y=Y,t=t,n=n))
+}
+result=FDA_sample()
+Y=result$Y
+t=result$t
+n=result$n
+matplot(t, t(Y), type='l', lty=1,col=rainbow(nrow(Y)),
+        xlab='t', ylab='Y(t)', main='原始資料曲線')
+
+###一階平滑資料曲線(給定連續時間)
+Smooth_function1=function(t,Y,n,h=0.3,t2=seq(0.2,0.8,length=200)){
+  
+  Y_smooth=matrix(0,nrow=n,ncol=length(t2))
+  for(i in 1:n){
+    Y_index=Y[i,]
+    for(j in 1:length(t2)){
+      t0=t2[j]
+      z=(t-t0)/h
+      k=ifelse((3/4)*(1-z^2)>=0,(3/4)*(1-z^2),0)
+      W=diag(k)
+      T1=cbind(1,(t-t0))
+      beta_hat=solve(t(T1)%*%W%*%T1)%*%t(T1)%*%W%*%Y_index
+      Y_smooth[i,j]=beta_hat[1]
+    }
+  }
+  return(list(t2=t2,Y_smooth=Y_smooth))
+  }
+result2=Smooth_function1(t,Y,n,h=0.3,t2=seq(0.2,0.8,length=200))
+Y_smooth=result2$Y_smooth
+t2=result2$t2
+matplot(t2, t(Y_smooth), type='l', lty=1,col=rainbow(nrow(Y_smooth)),
+        xlab='t2', ylab='Y_smooth(t)', main='一階平滑資料曲線(給定連續時間)')
+
+###一階平滑資料曲線(給定間斷時間)
+Smooth_function1=function(t,Y,n,h=0.3,t3=c(0.1,0.4,0.8,1)){
+  Y_smooth=matrix(0,nrow=n,ncol=length(t3))
+  for (i in 1:n) {
+    Y_index=Y[i,]
+    for(j in 1:length(t3)){
+      t0=t3[j]
+      z=(t-t0)/h
+      k=ifelse((3/4)*(1-z^2)>=0,(3/4)*(1-z^2),0)
+      W=diag(k)
+      T1=cbind(1,(t-t0))
+      beta_hat=solve(t(T1)%*%W%*%T1)%*%t(T1)%*%W%*%Y_index
+      Y_smooth[i,j]=beta_hat[1,]
+    }
+  }
+  return(list(t3=t3,Y_smooth=Y_smooth))
+}
+result2=Smooth_function1(t,Y,n,h=0.3,t3=c(0.1,0.4,0.8,1))
+Y_smooth=result2$Y_smooth
+t3=result2$t3
+matplot(t3, t(Y_smooth), type='l', lty=1,col=rainbow(nrow(Y_smooth)),
+        xlab='t3', ylab='Y_smooth(t)', main='一階平滑資料曲線(給定間斷時間)')
+
+
+
+###給定連續時間找mean function
+Smooth_function1=function(t,Y,n,h=0.3,t2=seq(0.2,0.8,length=200)){
+  Y_smooth=matrix(0,nrow=n,ncol=length(t2))
+  for(i in 1:n){
+    Y_index=Y[i,]
+    for(j in 1:length(t2)){
+      t0=t2[j]
+      z=(t-t0)/h
+      k=ifelse((3/4)*(1-z^2)>=0,(3/4)*(1-z^2),0)
+      W=diag(k)
+      T1=cbind(1,(t-t0))
+      beta_hat=solve(t(T1)%*%W%*%T1)%*%t(T1)%*%W%*%Y_index
+      Y_smooth[i,j]=beta_hat[1]
+    }
+  }
+  #meanfunction
+  mean_function=function(Y_smooth,n,t2){
+    Y_mean=rep(0,length(t2))
+    for(j in 1:length(t2)){
+      Y_mean[j]=sum(Y_smooth[,j])/n
+    }
+    return(Y_mean=Y_mean)
+  }
+  Y_mean=mean_function(Y_smooth,n,t2)
+  return(list(t2=t2,Y_smooth=Y_smooth,Y_mean=Y_mean))
+}
+result2=Smooth_function1(t,Y,n,h=0.3,t2=seq(0.2,0.8,length=200))
+Y_smooth=result2$Y_smooth
+t2=result2$t2
+Y_mean=result2$Y_mean
+matplot(t2, t(Y_smooth), type='l', lty=1,col=rainbow(nrow(Y_smooth)),
+        xlab='t2', ylab='Y_smooth(t)', main='找mean function')
+lines(t2,Y_mean,col="black",type='l',lwd=3)
+
+
+
+matplot(t, t(Y), type='l', lty=1,col=rainbow(nrow(Y)),
+        xlab='t', ylab='Y(t)', main='原始資料曲線')
+lines(t2,Y_mean,col="black",type='l',lwd=3)
