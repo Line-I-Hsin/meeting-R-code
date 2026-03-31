@@ -44,6 +44,7 @@ Smooth_function1=function(t,Y,n,h,t2){
   Y_mean=mean_function(Y_smooth,n,t2)
   return(list(t2=t2,Y_smooth=Y_smooth,Y_mean=Y_mean))
 }
+###給定連續時間
 result2=Smooth_function1(t,Y,n,h=0.3,t2=seq(0.2,0.8,length=200))
 Y_smooth=result2$Y_smooth
 t2=result2$t2
