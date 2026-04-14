@@ -1,0 +1,51 @@
+par(mfrow=c(2,3))
+#生成資料(原始資料)
+FDA_sample=function(seed,n,sigma1,sigma2,t,sigma3){
+  set.seed(seed)
+  a1=rnorm(n,0,sigma1)
+  a2=rnorm(n,0,sigma2)
+  X=matrix(0,nrow=n,ncol=length(t))
+  for(i in 1:n){
+    X[i,]=sqrt(2)*cos(2*pi*t)+a1[i]*sqrt(2)*sin(2*pi*t)+a2[i]*sqrt(2)*sin(3*pi*t)
+  }
+  e=matrix(rnorm(n*length(t),0,sigma3),nrow=n,ncol=length(t))
+  Y=X+e
+  return(list(Y=Y,t=t,n=n))
+}
+result=FDA_sample(seed=123,n=20,sigma1=2,sigma2=4,t=seq(0,1,length=10),sigma3=1)
+Y=result$Y
+t=result$t
+n=result$n
+matplot(t,t(Y),type='l',lty=1,col=rainbow(nrow(Y)),xlab='t',ylab='Y(t)',main='原始資料曲線')
+plot(rep(t,each=n),as.vector(Y),xlab="t",ylab="Y(t)",main="散佈圖")
+###Smooth_function
+Smooth_function1=function(t,Y,n,h,t2){
+  Y=as.vector(Y)
+  t=rep(t,each=n)
+  Y_smooth=rep(0,length(t2))
+    for(i in 1:length(t2)){
+      t0=t2[i]
+      z=(t-t0)/h
+      k=ifelse((3/4)*(1-z^2)>=0,(3/4)*(1-z^2),0)#Epanechnikov kernel
+      W=diag(k)#權重矩陣
+      T1=cbind(1,(t-t0))
+      beta_hat=solve(t(T1)%*%W%*%T1)%*%t(T1)%*%W%*%Y
+      Y_smooth[i]=beta_hat[1]
+    }
+  return(Y_smooth)
+}
+###給定密集時間
+t2=seq(0.2,0.8,length = 200)
+result2=Smooth_function1(t,Y,n,h=0.3,t2=t2)
+plot(rep(t,each = n),as.vector(Y),xlab="t",ylab="Y(t)",main="給定密集時間mean function")
+lines(t2,result2,col="red",lwd=3)
+#mean function
+plot(t2,result2,type='l',col='blue',lwd=3,xlab ='t',ylab='smoothing value',main='給定密集時間mean function')
+####給定稀疏時間
+t2=c(0.005,0.125,0.155,0.2,0.221,0.245,0.264,0.33,0.5,0.7)
+result3=Smooth_function1(t,Y,n,h=0.3,t2)
+plot(rep(t,each=n),as.vector(Y),xlab="t",ylab="Y(t)",main="給定稀疏時間mean function")
+lines(t2,result3,col="red",lwd=3)
+#mean function
+plot(t2,result3,type='l',col='blue',lwd =3,xlab='t',ylab='smoothing value',main='給定稀疏時間mean function')
+
