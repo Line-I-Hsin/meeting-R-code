@@ -1,0 +1,77 @@
+#生成資料(原始資料)
+par(mfrow=c(1,1))
+FDA_sample=function(seed,n,sigma1,sigma2,t,sigma3){
+  set.seed(seed)
+  a1=rnorm(n,0,sigma1)
+  a2=rnorm(n,0,sigma2)
+  X=matrix(0,nrow = n,ncol=length(t))
+  for(i in 1:n){
+    X[i,]=sqrt(2)*cos(2*pi*t)+a1[i]*sqrt(2)*sin(2*pi*t)+a2[i]*sqrt(2)*sin(3*pi*t)
+  }
+  e=matrix(rnorm(n*length(t),0,sigma3),nrow = n,ncol = length(t))
+  Y=X+e
+  return(list(Y=Y,t=t,n=n))
+}
+result=FDA_sample(seed=123,n=200,sigma1=2,sigma2=4,t=seq(0,1,length=500),sigma3=1)
+Y=result$Y
+t=result$t
+n=result$n
+matplot(t, t(Y), type='l', lty=1,col=rainbow(nrow(Y)),
+        xlab='t', ylab='Y(t)', main='原始資料曲線')
+
+###Smooth_function
+Smooth_function1=function(t,Y,n,h,t2){
+  Y_smooth=matrix(0,nrow=n,ncol=length(t2))
+  for(i in 1:n){
+    Y_index=Y[i,]
+    for(j in 1:length(t2)){
+      t0=t2[j]
+      z=(t-t0)/h
+      k=ifelse((3/4)*(1-z^2)>=0,(3/4)*(1-z^2),0)#Epanechnikov kernel
+      W=diag(k)#權重矩陣
+      T1=cbind(1,(t-t0))
+      beta_hat=solve(t(T1)%*%W%*%T1)%*%t(T1)%*%W%*%Y_index
+      Y_smooth[i,j]=beta_hat[1]
+    }
+  }
+  #meanfunction
+  mean_function=function(Y_smooth,n,t2){
+    Y_mean=rep(0,length(t2))
+    for(j in 1:length(t2)){
+      Y_mean[j]=sum(Y_smooth[,j])/n
+    }
+    return(Y_mean=Y_mean)
+  }
+  ####cov
+  cov_function=function(Y_smooth,Y_mean){
+    Y_cov=t(Y_smooth-Y_mean)%*%(Y_smooth-Y_mean)/(n-1)
+    return(Y_cov=Y_cov)
+  }
+    Y_mean=mean_function(Y_smooth,n,t2)
+    Y_cov=cov_function(Y_smooth,Y_mean)
+  return(list(t2=t2,Y_smooth=Y_smooth,Y_mean=Y_mean,Y_cov=Y_cov))
+}
+####給定密集時間
+result2=Smooth_function1(t,Y,n,h=0.2,t2=seq(0.2,0.8,length=200))
+###FPCA 累積變異
+t2=result2$t2
+Y_cov=result2$Y_cov
+hat_eigen=eigen(Y_cov)
+var_eigen=hat_eigen$values/sum(hat_eigen$values)
+caulative_persent=cumsum(var_eigen)
+####前兩個eigen function
+matplot(t2,hat_eigen$vectors[,1:2],type="l",lty=1,lwd=3,xlab="t",ylab="eigenvectors")
+# 平滑結果
+matplot(result2$t2,t(result2$Y_smooth),type = 'l', lty = 1, col = rainbow(result$n),xlab = 't', ylab = 'Smooth Y(t)', main = '平滑後的曲線')
+##cov等高線圖
+persp(t2,t2,Y_cov,phi=30,theta=30,xlab = "t1", ylab = "t2", zlab = "Cov",
+      main = "Cov Surface Plot")
+##mean等高線圖
+mean_matrix=outer(result2$Y_mean, result2$Y_mean, FUN = function(x, y) x)
+persp(t2, t2, mean_matrix,phi = 30, theta = 30,xlab = "t1", ylab = "t2", zlab = "Mean Value",main = "Mean Function")
+####前兩個PC score圖
+Y_smooth=result2$Y_smooth
+Y_mean=result2$Y_mean
+Z_matrix=Y_smooth-Y_mean
+PC_score=Z_matrix%*%hat_eigen$vectors
+plot(PC_score[,1],PC_score[,2],xlab="PC1",ylab="PC2",pch=16,col="blue")
